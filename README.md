@@ -48,6 +48,8 @@ unzip top-1m.csv.zip
 while sleep 2; do head -10 top-1m.csv | shuf -n 1 | awk -F, '{print $2}' | xargs -i squidclient -g 4 -v "http://{}"; done
 ```
 
+* TODO need to alter this process so that it has a multiple-level TLD (bbc.co.uk) and a complex URI resource
+
 The previous command is generating log records at `/var/log/squid/access.log`.  Run the following command in another terminal to extract this data and publish it to Kafka. Again, leave this command running to generate that continuous feed of data.
 
 ```
@@ -114,6 +116,8 @@ Create a file named `squid_index.template` using the following content.  This de
 }
 ```
 
+By default, Elasticsearch will attempt to analyze all fields of type string.  This means that Elasticsearch will tokenize the string and perform additional processing to enable free-form text search.  In many cases, and all cases for the Squid data, we want to treat each of the string fields as enumerations.  Rather than being analyzed, they need to be treated as unbreakable
+
 Create this index template within Elasticsearch by executing the following command.  This refers to the index template definition created in the previous step.
 
 ```
@@ -138,19 +142,40 @@ Now that we have a Squid index with all of the right data types, we need to tell
 
 ![](images/setup-squid-index.gif)
 
- Login to your Kibana user interface and then click on `Settings`, then click on `Indices`.
+Login to your Kibana user interface and then click on `Settings`, then `Indices`.
 
-A text field will prompt for the name of the index.  Type `squid*` within the text field.  This will match against all Squid indices over all time periods.
+A text field will prompt for the name of the index.  Type `squid*` within the text field.  Every hour or day, depending on the specific configuration, a new Squid index will be created.  Using this pattern will match against all Squid indices for all time periods.
 
 Click outside of that text box and wait for the 'Time-field name' input field to populate.  Since there is only one timestamp in the index, this should default to a field called `timestamp`.  If this does not happen simply choose the field `timestamp`.  
 
 Then click the 'Create' button.
 
-
 #### Review the Data
 
-![](images/review-index.gif)
+Now that Kibana is aware of the new Squid index, let's take a look at the data.
+
+![](images/review-squid-index.gif)
+
+Click on `Discover` and then choose the newly created `squid*` index pattern.  
+
+By clicking any of the fields on the left menu, you can see a representation of the variety of data for that specific fields.
+
+Clicking on a specific record will show each field available in the data.
 
 #### Visualize
 
+After using the `Discover` panel to better understand the Squid data, let's create a few visualizations.
+
 ![](images/top-squid-domains.gif)
+
+Click on 'Visualize' in the top level menu.
+
+Choose the 'Vertical bar chart' and when prompted to 'Select a search source' choose 'From a new search'.  Choose the `squid*` index pattern.
+
+Under 'Select bucket types' click the 'X-Axis' and for the 'Aggregation' type choose 'Terms'.
+
+Under 'Field' choose the `domain_without_subdomains` field.
+
+Click the 'Play' button  to refresh the visualization.
+
+Near the top-right side of the screen click on the 'Save' icon to save the visualization.  Name it something appropriate.  This will allow us to use the visualization in a dashboard later.
