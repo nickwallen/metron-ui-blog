@@ -5,18 +5,6 @@
       "_timestamp": {
         "enabled": true
       },
-      "dynamic_templates": [
-        {
-          "timestamps": {
-            "match": "*:ts",
-            "match_mapping_type": "*",
-            "mapping": {
-              "type": "date",
-              "format": "epoch_millis"
-            }
-          }
-        }
-      ],
       "properties": {
         "timestamp": {
           "type": "date",
