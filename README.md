@@ -60,10 +60,10 @@ Ensure that the parser topology for Squid continues to run based on the steps ou
 
 #### Index Template
 
-To work with the Squid data in Kibana, we need to ensure that the data is landing in the search index with the correct data types.  This can be achieved by defining an index template.
+To work with the Squid data in Kibana, we need to ensure that the data is landing in the search index with the correct data types.  This can be achieved by defining an index template.  Run the following command to create an index template for Squid.
 
-Create a file named `squid_index.template` using the following content.  This defines all of the fields expected within the Squid data along with their data types.
 ```
+curl -XPOST ec2-52-40-44-64.us-west-2.compute.amazonaws.com:9200/_template/squid_index -d '
 {
   "template": "squid_index*",
   "mappings": {
@@ -113,27 +113,21 @@ Create a file named `squid_index.template` using the following content.  This de
       }
     }
   }
-}
+}'
 ```
 
-By default, Elasticsearch will attempt to analyze all fields of type string.  This means that Elasticsearch will tokenize the string and perform additional processing to enable free-form text search.  In many cases, and all cases for the Squid data, we want to treat each of the string fields as enumerations.  Rather than being analyzed, they need to be treated as unbreakable
-
-Create this index template within Elasticsearch by executing the following command.  This refers to the index template definition created in the previous step.
-
-```
-curl -s -XPOST node1:9200/_template/squid_index -d @squid_index.template
-```
+By default, Elasticsearch will attempt to analyze all fields of type string.  This means that Elasticsearch will tokenize the string and perform additional processing to enable free-form text search.  In many cases, and all cases for the Squid data, we want to treat each of the string fields as enumerations.  This is why most fields in the index template are `not_analyzed`.
 
 An index template will only apply for indices that are created after the template is created.  Delete the existing Squid indices so that new ones can be generated with the index template.
 
 ```
-curl -s -XDELETE node1:9200/squid*
+curl -XDELETE node1:9200/squid*
 ```
 
 Wait for the Squid index to be re-created.  This may take a minute or two based on how fast the Squid data is being consumed in your environment.
 
 ```
-curl -s -XGET node1:9200/squid*
+curl -XGET node1:9200/squid*
 ```
 
 #### Configure the Squid Index in Kibana
@@ -142,13 +136,13 @@ Now that we have a Squid index with all of the right data types, we need to tell
 
 ![](images/setup-squid-index.gif)
 
-Login to your Kibana user interface and then click on `Settings`, then `Indices`.
+1. Login to your Kibana user interface and then click on `Settings`, then `Indices`.
 
-A text field will prompt for the name of the index.  Type `squid*` within the text field.  Every hour or day, depending on the specific configuration, a new Squid index will be created.  Using this pattern will match against all Squid indices for all time periods.
+2. A text field will prompt for the name of the index.  Type `squid*` within the text field.  Every hour or day, depending on the specific configuration, a new Squid index will be created.  Using this pattern will match against all Squid indices for all time periods.
 
-Click outside of that text box and wait for the 'Time-field name' input field to populate.  Since there is only one timestamp in the index, this should default to a field called `timestamp`.  If this does not happen simply choose the field `timestamp`.  
+3. Click outside of that text box and wait for the 'Time-field name' input field to populate.  Since there is only one timestamp in the index, this should default to a field called `timestamp`.  If this does not happen simply choose the field `timestamp`.  
 
-Then click the 'Create' button.
+4. Then click the 'Create' button.
 
 #### Review the Data
 
@@ -156,11 +150,11 @@ Now that Kibana is aware of the new Squid index, let's take a look at the data.
 
 ![](images/review-squid-index.gif)
 
-Click on `Discover` and then choose the newly created `squid*` index pattern.  
+1. Click on `Discover` and then choose the newly created `squid*` index pattern.  
 
-By clicking any of the fields on the left menu, you can see a representation of the variety of data for that specific fields.
+2. By clicking any of the fields on the left menu, you can see a representation of the variety of data for that specific fields.
 
-Clicking on a specific record will show each field available in the data.
+3. Clicking on a specific record will show each field available in the data.
 
 #### Visualize
 
@@ -168,14 +162,26 @@ After using the `Discover` panel to better understand the Squid data, let's crea
 
 ![](images/top-squid-domains.gif)
 
-Click on 'Visualize' in the top level menu.
+1. Click on 'Visualize' in the top level menu.
 
-Choose the 'Vertical bar chart' and when prompted to 'Select a search source' choose 'From a new search'.  Choose the `squid*` index pattern.
+2. Choose the 'Vertical bar chart' and when prompted to 'Select a search source' choose 'From a new search'.  Choose the `squid*` index pattern.
 
-Under 'Select bucket types' click the 'X-Axis' and for the 'Aggregation' type choose 'Terms'.
+3. Under 'Select bucket types' click the 'X-Axis' and for the 'Aggregation' type choose 'Terms'.
 
-Under 'Field' choose the `domain_without_subdomains` field.
+4. Under 'Field' choose the `domain_without_subdomains` field.
 
-Click the 'Play' button  to refresh the visualization.
+5. Click the 'Play' button  to refresh the visualization.
 
-Near the top-right side of the screen click on the 'Save' icon to save the visualization.  Name it something appropriate.  This will allow us to use the visualization in a dashboard later.
+6. Near the top-right side of the screen click on the 'Save' icon to save the visualization.  Name it something appropriate.  This will allow us to use the visualization in a dashboard later.
+
+#### Customize the Dashboard
+
+![](images/add-to-dashboard.gif)
+
+1. Open the Metron Dashboard by clicking on 'Dashboard' in the top-level menu.
+
+2. On the right, click the 'Add' button indicated by a plus sign.
+
+3. Find the visualization that you would like to add.
+
+4. Scroll to the bottom of the dashboard to find the visualization that was added.  From here you can resize and move the visualization as needed.
