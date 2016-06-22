@@ -36,9 +36,9 @@ Now that you understand Metron's default dashboard, let's cover how you might ex
 
 **TODO** Links to the previous blog posts covering these examples.
 
-#### Enhancing the Squid Data
+#### Enhance the Squid Data
 
-The previous tutorials covering Squid produced a limited data set.  These consisted of a few requests to the CNN web site.  To make this tutorial more interesting, we are going to need a bit more variety in the sample data.
+The previous tutorials covering Squid produced a limited data set.  These consisted of a few basic requests.  To make this tutorial more interesting, we are going to need a bit more variety in the sample data.
 
 Open a terminal and run the following series of commands.  This will download a list of the top 1 million sites as defined by Alexa.  This will continually choose one at random and make a request through Squid for that web site.  Leave this command running on the host so that a continual feed of data is generated as we work through the remainder of this tutorial.
 
@@ -48,7 +48,7 @@ unzip top-1m.csv.zip
 while sleep 2; do head -10 top-1m.csv | shuf -n 1 | awk -F, '{print $2}' | xargs -i squidclient -g 4 -v "http://{}"; done
 ```
 
-* TODO need to alter this process so that it has a multiple-level TLD (bbc.co.uk) and a complex URI resource
+* **TODO** need to alter this process so that it has a multiple-level TLD (bbc.co.uk) and a complex URI resource
 
 The previous command is generating log records at `/var/log/squid/access.log`.  Run the following command in another terminal to extract this data and publish it to Kafka. Again, leave this command running to generate that continuous feed of data.
 
@@ -58,74 +58,73 @@ tail -F /var/log/squid/access.log | /usr/hdp/current/kafka-broker/bin/kafka-cons
 
 Ensure that the parser topology for Squid continues to run based on the steps outlined in the previous tutorials.
 
-#### Index Template
+#### Create an Index Template
 
-To work with the Squid data in Kibana, we need to ensure that the data is landing in the search index with the correct data types.  This can be achieved by defining an index template.  Run the following command to create an index template for Squid.
+To work with the Squid data in Kibana, we need to ensure that the data is landing in the search index with the correct data types.  This can be achieved by defining an index template.  
 
-```
-curl -XPOST ec2-52-40-44-64.us-west-2.compute.amazonaws.com:9200/_template/squid_index -d '
-{
-  "template": "squid_index*",
-  "mappings": {
-    "bro_doc": {
-      "_timestamp": {
-        "enabled": true
-      },
-      "properties": {
-        "timestamp": {
-          "type": "date",
-          "format": "epoch_millis"
+1. Run the following command to create an index template for Squid.
+  ```
+  curl -XPOST ec2-52-40-44-64.us-west-2.compute.amazonaws.com:9200/_template/squid_index -d '
+  {
+    "template": "squid_index*",
+    "mappings": {
+      "bro_doc": {
+        "_timestamp": {
+          "enabled": true
         },
-        "source:type": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "action": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "bytes": {
-          "type": "integer"
-        },
-        "code": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "domain_without_subdomains": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "full_hostname": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "elapsed": {
-          "type": "integer"
-        },
-        "method": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
-        "ip_dst_addr": {
-          "type": "string",
-          "index": "not_analyzed"
+        "properties": {
+          "timestamp": {
+            "type": "date",
+            "format": "epoch_millis"
+          },
+          "source:type": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "action": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "domain_without_subdomains": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "full_hostname": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "elapsed": {
+            "type": "integer"
+          },
+          "method": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "ip_dst_addr": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
         }
       }
     }
-  }
-}'
-```
+  }'
+  ```
 
-By default, Elasticsearch will attempt to analyze all fields of type string.  This means that Elasticsearch will tokenize the string and perform additional processing to enable free-form text search.  In many cases, and all cases for the Squid data, we want to treat each of the string fields as enumerations.  This is why most fields in the index template are `not_analyzed`.
+2. By default, Elasticsearch will attempt to analyze all fields of type string.  This means that Elasticsearch will tokenize the string and perform additional processing to enable free-form text search.  In many cases, and all cases for the Squid data, we want to treat each of the string fields as enumerations.  This is why most fields in the index template are `not_analyzed`.
 
-An index template will only apply for indices that are created after the template is created.  Delete the existing Squid indices so that new ones can be generated with the index template.
+3. An index template will only apply for indices that are created after the template is created.  Delete the existing Squid indices so that new ones can be generated with the index template.
+  ```
+  curl -XDELETE node1:9200/squid*
+  ```
 
-```
-curl -XDELETE node1:9200/squid*
-```
-
-Wait for the Squid index to be re-created.  This may take a minute or two based on how fast the Squid data is being consumed in your environment.
-
+4. Wait for the Squid index to be re-created.  This may take a minute or two based on how fast the Squid data is being consumed in your environment.
 ```
 curl -XGET node1:9200/squid*
 ```
@@ -136,7 +135,7 @@ Now that we have a Squid index with all of the right data types, we need to tell
 
 ![](images/setup-squid-index.gif)
 
-1. Login to your Kibana user interface and then click on `Settings`, then `Indices`.
+1. Login to your Kibana user interface and then click on 'Settings', then 'Indices'.
 
 2. A text field will prompt for the name of the index.  Type `squid*` within the text field.  Every hour or day, depending on the specific configuration, a new Squid index will be created.  Using this pattern will match against all Squid indices for all time periods.
 
@@ -185,3 +184,7 @@ After using the `Discover` panel to better understand the Squid data, let's crea
 3. Find the visualization that you would like to add.
 
 4. Scroll to the bottom of the dashboard to find the visualization that was added.  From here you can resize and move the visualization as needed.
+
+### Summary
+
+At this point you should be comfortable customizing a dashboard as you add new sources of telemetry to Metron. This article introduced Metron's default dashboard that is built upon Kibana 4.  It covered the elements present in the dashboard and how you can extend the dashboard for your own purposes. 
