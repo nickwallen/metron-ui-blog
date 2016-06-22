@@ -1,0 +1,62 @@
+{
+  "template": "squid_index*",
+  "mappings": {
+    "bro_doc": {
+      "_timestamp": {
+        "enabled": true
+      },
+      "dynamic_templates": [
+        {
+          "timestamps": {
+            "match": "*:ts",
+            "match_mapping_type": "*",
+            "mapping": {
+              "type": "date",
+              "format": "epoch_millis"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "source:type": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "action": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "code": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "domain_without_subdomains": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "full_hostname": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "elapsed": {
+          "type": "integer"
+        },
+        "method": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "ip_dst_addr": {
+          "type": "string",
+          "index": "not_analyzed"
+        }
+      }
+    }
+  }
+}
